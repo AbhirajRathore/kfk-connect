@@ -1,0 +1,90 @@
+# Example of this - https://github.com/confluentinc/learn-kafka-courses/blob/main/kafka-connect-101/self-managed-connect.yml
+## Command to run
+# source ~/confluent-7.5.2/delta_configs/env.delta
+# docker-compose up -d
+---
+version: '2'
+services:
+
+  connect-8100:
+    image: confluentinc/cp-server-connect:7.5.2
+    restart: always
+    hostname: connect-8100
+    container_name: hk_inventory_prod
+    ports:
+      - "8100:8100"
+    # volumes:
+    #   - ./data:/data
+    environment:
+      ## Refer this for more env settings - https://github.com/robcowart/cp-kafka-connect-custom/blob/master/docker-compose.yml
+      CONNECT_BOOTSTRAP_SERVERS: $BOOTSTRAP_SERVERS
+      CONNECT_GROUP_ID: "cp_server_connect_group_hk_inventory"
+      CONNECT_CONFIG_STORAGE_TOPIC: "_connect_config_hk_inventory"
+      CONNECT_OFFSET_STORAGE_TOPIC: "_connect_offsets_hk_inventory"
+      CONNECT_STATUS_STORAGE_TOPIC: "_connect_status_hk_inventory"
+      CONNECT_REPLICATION_FACTOR: 3
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3 # default 3
+      CONNECT_OFFSET_STORAGE_PARTITIONS: 1 # default 25
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3 # default 3
+      CONNECT_STATUS_STORAGE_PARTITIONS: 1 # default 5
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3 # default 3
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+
+      # Confluent Schema Registry for Kafka Connect
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: $SCHEMA_REGISTRY_URL
+      CONNECT_VALUE_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: $BASIC_AUTH_CREDENTIALS_SOURCE
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: $SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO
+
+      # CONNECT_REST_ADVERTISED_HOST_NAME: "connect-1"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "connect-8100"
+      CONNECT_LISTENERS: http://connect-8100:8100
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      # CONNECT_LOG4J_ROOT_LOGLEVEL: DEBUG
+      # CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      # CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect=TRACE
+      # CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect=DEBUG
+      # CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect=DEBUG,org.apache.kafka.clients.consumer=DEBUG"
+      # CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect=DEBUG,org.apache.kafka.clients.consumer=INFO"
+      # CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect=DEBUG,org.apache.kafka.clients.consumer=DEBUG"
+      # Exclude specific consumer clientId and groupId
+      # CONNECT_LOG4J_LOGGERS_EXCLUDE: "org.apache.kafka.clients.consumer.internals.Fetcher=INFO"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect=DEBUG,org.apache.kafka.clients.consumer=ERROR"
+
+
+    # Other configurations...
+      
+      # Confluent Cloud config
+      CONNECT_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_RETRY_BACKOFF_MS: "500"
+      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+
+      # Connect worker
+      CONNECT_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_SASL_MECHANISM: PLAIN
+
+      # Connect producer
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_PRODUCER_SASL_MECHANISM: PLAIN
+
+      # Connect consumer
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_CONSUMER_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_CONSUMER_SASL_MECHANISM: PLAIN
+
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing JDBC Connector"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.4
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
