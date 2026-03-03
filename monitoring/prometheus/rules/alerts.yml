@@ -1,0 +1,136 @@
+groups:
+
+  # ── Worker / Container availability ──────────────────────────────────────────
+  - name: kafka_connect_worker_availability
+    interval: 30s
+    rules:
+
+      - alert: KafkaConnectWorkerDown
+        expr: kafka_connect_worker_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka Connect worker is unreachable [{{ $labels.region }} / {{ $labels.env }}]"
+          description: |
+            Worker '{{ $labels.worker }}' (region={{ $labels.region }}, env={{ $labels.env }}) has not
+            responded to REST API polls for more than 1 minute.
+            Possible causes: container crashed, network issue, or Kafka Connect process failed to start.
+            Check container logs: docker logs {{ $labels.worker }}
+
+      - alert: KafkaConnectWorkerNoConnectors
+        expr: kafka_connect_connector_count == 0 and kafka_connect_worker_up == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No connectors on worker [{{ $labels.region }} / {{ $labels.env }}]"
+          description: |
+            Worker '{{ $labels.worker }}' is reachable but has no connectors registered.
+            The connector may not have been deployed yet, or was accidentally deleted.
+
+  # ── Connector / Task health ───────────────────────────────────────────────────
+  - name: kafka_connect_connector_health
+    interval: 30s
+    rules:
+
+      - alert: KafkaConnectTaskFailed
+        expr: kafka_connect_task_failed == 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Connector task FAILED [{{ $labels.region }} / {{ $labels.env }}]"
+          description: |
+            One or more tasks in connector '{{ $labels.connector }}' on worker '{{ $labels.worker }}'
+            (region={{ $labels.region }}, env={{ $labels.env }}) are in FAILED state.
+            This typically indicates a database connection error (ORA- error), Confluent Cloud
+            authentication failure, or schema registry issue.
+            Check logs: docker logs {{ $labels.worker }}
+            Restart task via REST:
+              curl -X POST http://<host>:<port>/connectors/{{ $labels.connector }}/tasks/0/restart
+
+      - alert: KafkaConnectTaskPaused
+        expr: kafka_connect_task_status{state="PAUSED"} == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Connector task PAUSED [{{ $labels.region }} / {{ $labels.env }}]"
+          description: |
+            Task {{ $labels.task_id }} in connector '{{ $labels.connector }}' on worker '{{ $labels.worker }}'
+            has been PAUSED for more than 10 minutes.
+            Resume via REST:
+              curl -X PUT http://<host>:<port>/connectors/{{ $labels.connector }}/resume
+
+      - alert: KafkaConnectConnectorUnassigned
+        expr: kafka_connect_connector_status{state="UNASSIGNED"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Connector UNASSIGNED [{{ $labels.region }} / {{ $labels.env }}]"
+          description: |
+            Connector '{{ $labels.connector }}' on worker '{{ $labels.worker }}' is UNASSIGNED.
+            This can happen during worker restarts. If it persists, the worker may have trouble
+            joining the Kafka Connect cluster (check _connect_status_* topic on Confluent Cloud).
+
+  # ── Container resource alerts ─────────────────────────────────────────────────
+  - name: container_resources
+    interval: 60s
+    rules:
+
+      - alert: InventoryContainerHighMemory
+        expr: |
+          (
+            container_memory_working_set_bytes{name=~".+inventory.+"}
+            / container_spec_memory_limit_bytes{name=~".+inventory.+"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container memory above 85% [{{ $labels.name }}]"
+          description: |
+            Container '{{ $labels.name }}' is using more than 85% of its memory limit.
+            Consider increasing the memory limit in docker-compose.yaml.
+
+      - alert: InventoryContainerRestarting
+        expr: |
+          increase(container_start_time_seconds{name=~".+inventory.+"}[10m]) > 1
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container restarting [{{ $labels.name }}]"
+          description: |
+            Container '{{ $labels.name }}' has restarted more than once in the last 10 minutes.
+            This usually indicates a crash loop. Check: docker logs {{ $labels.name }}
+
+  # ── Scrape health ─────────────────────────────────────────────────────────────
+  - name: exporter_health
+    interval: 60s
+    rules:
+
+      - alert: ConnectExporterScrapeErrors
+        expr: increase(kafka_connect_scrape_errors_total[10m]) > 5
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "connect-exporter is experiencing repeated scrape errors [{{ $labels.worker }}]"
+          description: |
+            More than 5 scrape errors in the last 10 minutes for worker '{{ $labels.worker }}'.
+            This may indicate intermittent connectivity issues between the exporter and the worker.
+
+      - alert: ConnectExporterDown
+        expr: absent(kafka_connect_worker_up)
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "connect-exporter is down — no metrics received"
+          description: |
+            The kafka_connect_worker_up metric has disappeared for more than 3 minutes.
+            The connect-exporter container may be down.
+            Check: docker logs monitoring_connect_exporter

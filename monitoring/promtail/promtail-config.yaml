@@ -1,0 +1,95 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    batchwait: 1s
+    batchsize: 1048576
+    timeout: 10s
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+
+scrape_configs:
+
+  # ── Kafka Connect inventory workers ───────────────────────────────────────
+  - job_name: docker-inventory-workers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+        filters:
+          # Only scrape containers whose name contains 'inventory'
+          - name: name
+            values: ["inventory"]
+    relabel_configs:
+      # Extract container name (strips leading /)
+      - source_labels: [__meta_docker_container_name]
+        regex: /(.*)
+        target_label: container
+
+      # Extract region from container name (e.g. "dubai_inventory_dev" → "dubai")
+      - source_labels: [container]
+        regex: (dubai|antwerp|india|hk|ny)_inventory.*
+        target_label: region
+
+      # Extract env from container name (e.g. "dubai_inventory_dev" → "dev")
+      - source_labels: [container]
+        regex: ".*_(dev|prod)"
+        target_label: env
+
+      # Set job label
+      - source_labels: [container]
+        target_label: job
+        replacement: kafka-connect
+
+    pipeline_stages:
+      # Parse the Connect log4j pattern: [2024-01-01 12:00:00,000] LEVEL msg (class:line)
+      - regex:
+          expression: '^\[(?P<timestamp>[^\]]+)\]\s+(?P<level>\w+)\s+(?P<connector_context>[^\s]*)\s*(?P<message>.+)\s+\((?P<class>[^:]+):(?P<line>\d+)\)$'
+
+      # Promote level to a label for filtering
+      - labels:
+          level:
+
+      # Drop noisy DEBUG/TRACE lines from consumer internals to keep Loki storage lean
+      - drop:
+          source: level
+          expression: "DEBUG|TRACE"
+          drop_counter_reason: "debug_trace_suppressed"
+
+      # Tag lines containing error indicators for easier searching
+      - match:
+          selector: '{job="kafka-connect"}'
+          stages:
+            - regex:
+                expression: '(?i)(?P<error_type>ORA-\d+|SQLException|ConnectException|AuthenticationException|JDBC error|Connection refused|timed out|FAILED|ERROR)'
+            - labels:
+                error_type:
+
+  # ── Monitoring stack own containers ───────────────────────────────────────
+  - job_name: docker-monitoring
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 30s
+        filters:
+          - name: name
+            values: ["monitoring_"]
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        regex: /(.*)
+        target_label: container
+      - source_labels: [container]
+        target_label: job
+        replacement: monitoring
+    pipeline_stages:
+      # Only keep WARN+ from monitoring containers
+      - drop:
+          source: __raw__
+          expression: ".*level=debug.*"
+          drop_counter_reason: "monitoring_debug_suppressed"

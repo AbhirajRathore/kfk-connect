@@ -1,0 +1,468 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "datasource", "id": "loki", "name": "Loki", "version": "1.0.0" }
+  ],
+  "uid": "kafka-connect-overview",
+  "title": "Kafka Connect — Overview",
+  "description": "Live status of all Kafka Connect inventory workers, connectors, tasks, and logs",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["kafka", "connect", "inventory", "kfk-connect"],
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "panels": [
+
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Worker Status",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Dubai — Dev Worker",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_worker_up{region=\"dubai\", env=\"dev\"}",
+          "legendFormat": "Dubai Dev",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "red" }, { "value": 1, "color": "green" }] },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Antwerp — Dev Worker",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_worker_up{region=\"antwerp\", env=\"dev\"}",
+          "legendFormat": "Antwerp Dev",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "red" }, { "value": 1, "color": "green" }] },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "India — Dev Worker",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_worker_up{region=\"india\", env=\"dev\"}",
+          "legendFormat": "India Dev",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "red" }, { "value": 1, "color": "green" }] },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "HK — Dev Worker",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_worker_up{region=\"hk\", env=\"dev\"}",
+          "legendFormat": "HK Dev",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "red" }, { "value": 1, "color": "green" }] },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "NY — Dev Worker",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_worker_up{region=\"ny\", env=\"dev\"}",
+          "legendFormat": "NY Dev",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "red" }, { "value": 1, "color": "green" }] },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Total Workers Up",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(kafka_connect_worker_up)",
+          "legendFormat": "Up",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "red" }, { "value": 3, "color": "yellow" }, { "value": 5, "color": "green" }] },
+          "color": { "mode": "thresholds" },
+          "unit": "short"
+        }
+      }
+    },
+
+    {
+      "id": 10,
+      "type": "row",
+      "title": "Connector & Task Health",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }
+    },
+
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Connector Status — All Workers",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_connector_status == 1",
+          "legendFormat": "{{worker}} / {{connector}} — {{state}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "state", "desc": false }]
+      },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "left" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "state" },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "RUNNING": { "color": "green", "text": "RUNNING" } } },
+                  { "type": "value", "options": { "FAILED": { "color": "red", "text": "FAILED" } } },
+                  { "type": "value", "options": { "PAUSED": { "color": "yellow", "text": "PAUSED" } } },
+                  { "type": "value", "options": { "UNASSIGNED": { "color": "orange", "text": "UNASSIGNED" } } }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true, "job": true, "instance": true }, "renameByName": { "worker": "Worker", "connector": "Connector", "region": "Region", "env": "Env", "state": "State" } } }
+      ]
+    },
+
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Failed Tasks — Action Required",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_task_failed == 1",
+          "legendFormat": "{{worker}} / {{connector}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "options": { "showHeader": true },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "left" },
+          "color": { "mode": "fixed", "fixedColor": "red" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [
+              { "id": "displayName", "value": "Has Failed Task" },
+              {
+                "id": "mappings",
+                "value": [{ "type": "value", "options": { "1": { "text": "YES — Restart needed", "color": "red" } } }]
+              },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true }, "renameByName": { "worker": "Worker", "connector": "Connector", "region": "Region", "env": "Env" } } }
+      ]
+    },
+
+    {
+      "id": 20,
+      "type": "row",
+      "title": "Worker Up/Down History",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }
+    },
+
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Worker Availability (1=UP, 0=DOWN)",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_connect_worker_up",
+          "legendFormat": "{{worker}}",
+          "interval": "30s"
+        }
+      ],
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "min"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "red" }, { "value": 1, "color": "green" }] },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Task Failed Count Over Time",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 22 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (region, env) (kafka_connect_task_failed)",
+          "legendFormat": "{{region}} / {{env}}",
+          "interval": "30s"
+        }
+      ],
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 1, "color": "red" }] },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+
+    {
+      "id": 30,
+      "type": "row",
+      "title": "Container Resources (cAdvisor)",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 }
+    },
+
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "Container CPU Usage — Inventory Workers",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total{name=~\".+inventory.+\"}[2m]) * 100",
+          "legendFormat": "{{name}}",
+          "interval": "30s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "lineWidth": 1, "fillOpacity": 5 }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }
+      }
+    },
+
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Container Memory Usage — Inventory Workers",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "container_memory_working_set_bytes{name=~\".+inventory.+\"}",
+          "legendFormat": "{{name}}",
+          "interval": "30s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "lineWidth": 1, "fillOpacity": 5 }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }
+      }
+    },
+
+    {
+      "id": 40,
+      "type": "row",
+      "title": "Live Logs",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 }
+    },
+
+    {
+      "id": 41,
+      "type": "logs",
+      "title": "Kafka Connect Logs — All Inventory Workers",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 38 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "{job=\"kafka-connect\"} |~ \"(?i)(error|warn|failed|ORA-|exception|JDBC)\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+
+    {
+      "id": 42,
+      "type": "logs",
+      "title": "Oracle DB / JDBC Errors Only",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 50 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "{job=\"kafka-connect\"} |~ \"(?i)(ORA-\\\\d+|SQLException|JDBC error|connection refused|timed out|Connection reset)\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    }
+  ]
+}

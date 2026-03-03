@@ -1,0 +1,200 @@
+version: '3.8'
+
+# ──────────────────────────────────────────────────────────────
+# Kafka Connect Monitoring Stack
+# Requires:  docker network create monitoring_net
+# Config:    copy .env.example → .env and fill in blanks
+# Access:    Grafana → http://<host>:3000
+# ──────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Metrics storage ──────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: monitoring_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - monitoring_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── Alert routing (Email via Gmail SMTP) ──────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: monitoring_alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    environment:
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+      SMTP_PASS: ${SMTP_PASS}
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+      - alertmanager_data:/alertmanager
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        sed "s|SMTP_PASS_PLACEHOLDER|$$SMTP_PASS|g; s|ALERT_EMAIL_TO_PLACEHOLDER|$$ALERT_EMAIL_TO|g" \
+          /etc/alertmanager/alertmanager.yml.tmpl > /tmp/alertmanager.yml
+        exec /bin/alertmanager \
+          --config.file=/tmp/alertmanager.yml \
+          --storage.path=/alertmanager \
+          --cluster.listen-address=
+    networks:
+      - monitoring_net
+    depends_on:
+      - prometheus
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── Dashboards + Log exploration ──────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: monitoring_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+      GF_ALERTING_ENABLED: "false"
+      GF_SERVER_ROOT_URL: "http://localhost:3000"
+      GF_INSTALL_PLUGINS: ""
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - monitoring_net
+    depends_on:
+      - prometheus
+      - loki
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── Log storage ───────────────────────────────────────────────
+  loki:
+    image: grafana/loki:2.9.7
+    container_name: monitoring_loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki:/etc/loki:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    networks:
+      - monitoring_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── Docker log collector → Loki ───────────────────────────────
+  promtail:
+    image: grafana/promtail:2.9.7
+    container_name: monitoring_promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail:/etc/promtail:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    networks:
+      - monitoring_net
+    depends_on:
+      - loki
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── Container metrics (CPU, mem, state) ───────────────────────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: monitoring_cadvisor
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    command:
+      - '--housekeeping_interval=30s'
+      - '--docker_only=true'
+      - '--store_container_labels=true'
+    networks:
+      - monitoring_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── Kafka Connect REST poller + healthchecks.io pinger ────────
+  connect-exporter:
+    build:
+      context: ./connect-exporter
+      dockerfile: Dockerfile
+    container_name: monitoring_connect_exporter
+    restart: unless-stopped
+    environment:
+      POLL_INTERVAL_SECONDS: "30"
+      CONNECT_TIMEOUT_SECONDS: "10"
+      HC_PING_TIMEOUT_SECONDS: "5"
+      # Phase 1 — dev inventory workers (fill in from healthchecks.io)
+      HC_PING_URL_DUBAI_DEV: ${HC_PING_URL_DUBAI_DEV}
+      HC_PING_URL_ANTWERP_DEV: ${HC_PING_URL_ANTWERP_DEV}
+      HC_PING_URL_INDIA_DEV: ${HC_PING_URL_INDIA_DEV}
+      HC_PING_URL_HK_DEV: ${HC_PING_URL_HK_DEV}
+      HC_PING_URL_NY_DEV: ${HC_PING_URL_NY_DEV}
+      # Phase 2 — prod inventory workers (uncomment when deploying prod)
+      # HC_PING_URL_DUBAI_PROD: ${HC_PING_URL_DUBAI_PROD}
+      # HC_PING_URL_ANTWERP_PROD: ${HC_PING_URL_ANTWERP_PROD}
+      # HC_PING_URL_INDIA_PROD: ${HC_PING_URL_INDIA_PROD}
+      # HC_PING_URL_HK_PROD: ${HC_PING_URL_HK_PROD}
+      # HC_PING_URL_NY_PROD: ${HC_PING_URL_NY_PROD}
+    networks:
+      - monitoring_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
+  loki_data:
+
+networks:
+  monitoring_net:
+    external: true

@@ -1,0 +1,78 @@
+{
+  "_comment": "Workers list for connect-exporter. Set active=false to disable without removing.",
+  "_hc_note": "hc_ping_url is resolved automatically from env vars HC_PING_URL_{REGION}_{ENV} (uppercase). Fill those in monitoring/.env",
+  "workers": [
+    {
+      "_comment": "── Phase 1: Dev Inventory Workers ──────────────────────────────────────",
+      "name": "dubai_inventory_dev",
+      "url": "http://dubai_inventory_dev:8084",
+      "region": "dubai",
+      "env": "dev",
+      "active": true
+    },
+    {
+      "name": "antwerp_inventory_dev",
+      "url": "http://antwerp_inventory_dev:8089",
+      "region": "antwerp",
+      "env": "dev",
+      "active": true
+    },
+    {
+      "name": "india_inventory_19c",
+      "url": "http://india_inventory_19c:8097",
+      "region": "india",
+      "env": "dev",
+      "active": true
+    },
+    {
+      "name": "hk_inventory_dev",
+      "url": "http://hk_inventory_dev:8099",
+      "region": "hk",
+      "env": "dev",
+      "active": true
+    },
+    {
+      "name": "ny_inventory_dev",
+      "url": "http://ny_inventory_dev:8095",
+      "region": "ny",
+      "env": "dev",
+      "active": true
+    },
+    {
+      "_comment": "── Phase 2: Prod Inventory Workers (set active=true when deploying prod) ──",
+      "name": "dubai_inventory_prod",
+      "url": "http://dubai_inventory_prod:8085",
+      "region": "dubai",
+      "env": "prod",
+      "active": false
+    },
+    {
+      "name": "antwerp_inventory_prod",
+      "url": "http://antwerp_inventory_prod:8090",
+      "region": "antwerp",
+      "env": "prod",
+      "active": false
+    },
+    {
+      "name": "india_inventory_prod",
+      "url": "http://india_inventory_prod:8083",
+      "region": "india",
+      "env": "prod",
+      "active": false
+    },
+    {
+      "name": "hk_inventory_prod",
+      "url": "http://hk_inventory_prod:8100",
+      "region": "hk",
+      "env": "prod",
+      "active": false
+    },
+    {
+      "name": "ny_inventory_prod",
+      "url": "http://ny_inventory_prod:8096",
+      "region": "ny",
+      "env": "prod",
+      "active": false
+    }
+  ]
+}

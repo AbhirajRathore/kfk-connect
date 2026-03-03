@@ -1,0 +1,86 @@
+global:
+  # Gmail SMTP — uses Google App Password (not your account password)
+  smtp_from: "receivables.dubai@gmail.com"
+  smtp_smarthost: "smtp.gmail.com:587"
+  smtp_auth_username: "receivables.dubai@gmail.com"
+  smtp_auth_password: "SMTP_PASS_PLACEHOLDER"
+  smtp_require_tls: true
+  smtp_hello: "kfk-connect-monitor"
+  resolve_timeout: 5m
+
+templates:
+  - /etc/alertmanager/templates/*.tmpl
+
+route:
+  receiver: "email-default"
+  group_by: ["alertname", "region", "env"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  routes:
+    # Critical alerts: short repeat interval
+    - matchers:
+        - severity = critical
+      receiver: "email-critical"
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: false
+
+    # Warning alerts: normal repeat interval
+    - matchers:
+        - severity = warning
+      receiver: "email-warning"
+      repeat_interval: 6h
+      continue: false
+
+receivers:
+  - name: "email-default"
+    email_configs:
+      - to: "ALERT_EMAIL_TO_PLACEHOLDER"
+        send_resolved: true
+        html: '{{ template "email.default.html" . }}'
+        headers:
+          Subject: >-
+            [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
+            {{ .GroupLabels.alertname }}
+
+  - name: "email-critical"
+    email_configs:
+      - to: "ALERT_EMAIL_TO_PLACEHOLDER"
+        send_resolved: true
+        html: '{{ template "email.default.html" . }}'
+        headers:
+          Subject: >-
+            🔴 [CRITICAL{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
+            {{ .GroupLabels.alertname }}
+            {{ with .GroupLabels.region }}[{{ . }}]{{ end }}
+
+  - name: "email-warning"
+    email_configs:
+      - to: "ALERT_EMAIL_TO_PLACEHOLDER"
+        send_resolved: true
+        html: '{{ template "email.default.html" . }}'
+        headers:
+          Subject: >-
+            🟡 [WARNING]
+            {{ .GroupLabels.alertname }}
+            {{ with .GroupLabels.region }}[{{ . }}]{{ end }}
+
+# Suppress task-level alerts when the whole worker is already down
+# (avoids alert spam when a single worker outage causes multiple task failures)
+inhibit_rules:
+  - source_matchers:
+      - alertname = KafkaConnectWorkerDown
+    target_matchers:
+      - alertname =~ "KafkaConnectTask.*|KafkaConnectConnector.*"
+    equal:
+      - worker
+      - region
+      - env
+
+  - source_matchers:
+      - alertname = ConnectExporterDown
+    target_matchers:
+      - alertname =~ "KafkaConnect.*"
+    equal: []

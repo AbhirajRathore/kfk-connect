@@ -88,3 +88,20 @@ services:
         /etc/confluent/docker/run &
         #
         sleep infinity
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8089/connectors || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    networks:
+      - monitoring_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+networks:
+  monitoring_net:
+    external: true

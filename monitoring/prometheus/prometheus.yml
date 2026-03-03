@@ -1,0 +1,54 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  scrape_timeout: 10s
+  external_labels:
+    project: "kfk-connect"
+    monitored_by: "prometheus"
+
+# Send firing alerts to Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
+
+# Load alert rule files
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+
+  # ── Kafka Connect status exporter ─────────────────────────────────────────
+  - job_name: "kafka-connect-exporter"
+    static_configs:
+      - targets:
+          - "connect-exporter:8000"
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # ── Container metrics via cAdvisor ────────────────────────────────────────
+  - job_name: "cadvisor"
+    static_configs:
+      - targets:
+          - "cadvisor:8080"
+    scrape_interval: 30s
+    # Keep only inventory container metrics to reduce cardinality
+    metric_relabel_configs:
+      - source_labels: [name]
+        regex: ".*(inventory|monitoring).*"
+        action: keep
+
+  # ── Self-monitoring ───────────────────────────────────────────────────────
+  - job_name: "prometheus"
+    static_configs:
+      - targets:
+          - "localhost:9090"
+    scrape_interval: 60s
+
+  - job_name: "alertmanager"
+    static_configs:
+      - targets:
+          - "alertmanager:9093"
+    scrape_interval: 60s
