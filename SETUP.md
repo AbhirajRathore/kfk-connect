@@ -341,7 +341,7 @@ You should see lines like:
 ### 3.4 — Check Prometheus has the metrics
 
 ```bash
-curl -s "http://localhost:9090/api/v1/query?query=kafka_connect_worker_up" \
+curl -s "http://localhost:9091/api/v1/query?query=kafka_connect_worker_up" \
   | python3 -m json.tool
 ```
 
@@ -371,7 +371,7 @@ Run this **on your laptop** (not the server). Leave the terminal open:
 ```bash
 ssh -N \
   -L 3000:localhost:3000 \
-  -L 9090:localhost:9090 \
+  -L 9091:localhost:9091 \
   -L 9093:localhost:9093 \
   root@10.130.3.18
 ```
@@ -381,7 +381,7 @@ Open in browser:
 | URL | What you see |
 |---|---|
 | `http://localhost:3000` | Grafana (login: admin / your password) |
-| `http://localhost:9090` | Prometheus query explorer |
+| `http://localhost:9091` | Prometheus query explorer |
 | `http://localhost:9093` | Alertmanager active alerts |
 
 In Grafana → **Dashboards** → **Kafka Connect — Overview** — you will see all 5 workers, connector states, and live error logs.
@@ -437,7 +437,7 @@ Check for SMTP errors. Verify the Gmail app password in `monitoring/.env` is cor
 | `hk_inventory_dev` | 8099 | `http://localhost:8099/connectors` |
 | `ny_inventory_dev` | 8095 | `http://localhost:8095/connectors` |
 | Grafana | 3000 | `http://localhost:3000` |
-| Prometheus | 9090 | `http://localhost:9090` |
+| Prometheus | 9091 | `http://localhost:9091` |
 | Alertmanager | 9093 | `http://localhost:9093` |
 
 ---

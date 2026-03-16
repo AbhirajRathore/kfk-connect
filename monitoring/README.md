@@ -7,7 +7,7 @@ Production-grade observability for all Kafka Connect inventory workers.
 | Service | Port | Purpose |
 |---|---|---|
 | Grafana | 3000 | Dashboards, log explorer |
-| Prometheus | 9090 | Metrics storage + alerting rules |
+| Prometheus | 9091 | Metrics storage + alerting rules |
 | Alertmanager | 9093 | Email alert routing (Gmail SMTP) |
 | Loki | 3100 | Log aggregation (internal) |
 | Promtail | — | Docker log collector → Loki |
@@ -145,13 +145,13 @@ Then connect with just `ssh portainer-host`.
 
 ### SSH tunnels — access Grafana and Prometheus from your local browser
 
-Because Grafana (3000), Prometheus (9090), and Alertmanager (9093) are bound to the server's loopback interface, you can forward them securely over SSH without opening those ports publicly.
+Because Grafana (3000), Prometheus (9091), and Alertmanager (9093) are bound to the server's loopback interface, you can forward them securely over SSH without opening those ports publicly.
 
 **Forward all monitoring ports in a single command:**
 ```bash
 ssh -N \
   -L 3000:localhost:3000 \
-  -L 9090:localhost:9090 \
+  -L 9091:localhost:9091 \
   -L 9093:localhost:9093 \
   -L 8081:localhost:8081 \
   <user>@<host-ip>
@@ -159,7 +159,7 @@ ssh -N \
 
 Then open in your browser:
 - Grafana → `http://localhost:3000`
-- Prometheus → `http://localhost:9090`
+- Prometheus → `http://localhost:9091`
 - Alertmanager → `http://localhost:9093`
 - cAdvisor → `http://localhost:8081`
 
@@ -167,7 +167,7 @@ Then open in your browser:
 ```bash
 ssh -fN \
   -L 3000:localhost:3000 \
-  -L 9090:localhost:9090 \
+  -L 9091:localhost:9091 \
   -L 9093:localhost:9093 \
   <user>@<host-ip>
 ```
@@ -179,7 +179,7 @@ Host portainer-tunnel
     User <user>
     IdentityFile ~/.ssh/your_key.pem
     LocalForward 3000 localhost:3000
-    LocalForward 9090 localhost:9090
+    LocalForward 9091 localhost:9091
     LocalForward 9093 localhost:9093
     LocalForward 8081 localhost:8081
     ServerAliveInterval 60
@@ -239,7 +239,7 @@ curl -X PUT http://localhost:<PORT>/connectors/<connector-name>/resume
 docker logs monitoring_connect_exporter -f --tail=100
 
 # Reload Prometheus config without restart
-curl -X POST http://localhost:9090/-/reload
+curl -X POST http://localhost:9091/-/reload
 
 # Check Alertmanager alerts
 curl http://localhost:9093/api/v2/alerts | python3 -m json.tool
