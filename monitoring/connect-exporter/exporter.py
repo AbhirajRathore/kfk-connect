@@ -66,7 +66,7 @@ SCRAPE_ERRORS = Counter(
 LAST_SCRAPE = Gauge(
     "kafka_connect_last_scrape_timestamp_seconds",
     "Unix timestamp of the last successful scrape",
-    ["worker"],
+    ["worker", "region", "env"],
 )
 
 # ── Healthchecks.io ───────────────────────────────────────────────────────────
