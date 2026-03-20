@@ -158,6 +158,28 @@ services:
         max-size: "50m"
         max-file: "5"
 
+  # ── Host CPU / RAM / disk / network metrics ───────────────────
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: monitoring_node_exporter
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # ── Kafka Connect REST poller + healthchecks.io pinger ────────
   connect-exporter:
     build:
