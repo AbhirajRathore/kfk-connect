@@ -774,3 +774,103 @@ Restart a failed task:
 ```bash
 curl -X POST http://localhost:<PORT>/connectors/<connector-name>/tasks/0/restart
 ```
+
+---
+
+## Part 7 — Manual Start / Stop Scripts
+
+Two helper scripts in the repo root let you bring everything up or down with a single command.
+
+### 7.1 — Start everything (containers + connectors + monitoring)
+
+```bash
+cd ~/kfk-connect
+./start-all.sh
+```
+
+This will:
+1. Create the `monitoring_net` Docker network (if missing)
+2. Start the monitoring stack
+3. Start all 8 Kafka Connect workers (4 regions × dev + prod)
+4. Wait for each worker to become healthy (~2-3 min)
+5. Register connectors if they don't already exist (existing ones auto-resume from Kafka topics)
+
+To skip connector registration (e.g. after a restart where connectors auto-resume):
+```bash
+./start-all.sh --no-connectors
+```
+
+### 7.2 — Stop everything
+
+```bash
+./stop-all.sh
+```
+
+To stop only workers or only monitoring:
+```bash
+./stop-all.sh --workers       # keep monitoring running
+./stop-all.sh --monitoring    # keep workers running
+```
+
+### 7.3 — Adding India
+
+When India workers are deployed, uncomment the India lines in both `start-all.sh` and `stop-all.sh` (and in `kfk-connect.service` if using auto-start).
+
+---
+
+## Part 8 — Auto-Start on Server Boot (systemd)
+
+A systemd service ensures all containers come back up automatically after a server restart.
+
+### 8.1 — Install the service
+
+```bash
+cp ~/kfk-connect/kfk-connect.service /etc/systemd/system/
+systemctl daemon-reload
+```
+
+### 8.2 — Enable auto-start
+
+```bash
+systemctl enable kfk-connect
+```
+
+### 8.3 — Verify it works
+
+```bash
+systemctl status kfk-connect
+```
+
+You can also manually trigger it:
+```bash
+systemctl start kfk-connect   # start all stacks
+systemctl stop kfk-connect    # stop all stacks
+```
+
+### 8.4 — How it works
+
+- The service runs **after Docker starts** on boot
+- It runs `docker compose up -d` for monitoring + all 8 workers
+- Connectors auto-resume from Kafka internal topics (no re-registration needed)
+- `TimeoutStartSec=300` gives workers time to install the JDBC plugin
+- The service is `Type=oneshot` with `RemainAfterExit=yes` — systemd considers it "active" once all compose stacks are started
+
+### 8.5 — Adding India
+
+Uncomment the India `ExecStart` and `ExecStop` lines in `kfk-connect.service`, then:
+```bash
+cp ~/kfk-connect/kfk-connect.service /etc/systemd/system/
+systemctl daemon-reload
+```
+
+### 8.6 — Checking logs after a reboot
+
+After the server restarts, verify everything came up:
+```bash
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+```
+
+Check the systemd service log:
+```bash
+journalctl -u kfk-connect --no-pager -n 50
+```
