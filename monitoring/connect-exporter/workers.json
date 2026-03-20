@@ -22,7 +22,7 @@
       "url": "http://india_inventory_19c:8097",
       "region": "india",
       "env": "dev",
-      "active": true
+      "active": false
     },
     {
       "name": "hk_inventory_dev",
@@ -44,14 +44,14 @@
       "url": "http://dubai_inventory_prod:8085",
       "region": "dubai",
       "env": "prod",
-      "active": false
+      "active": true
     },
     {
       "name": "antwerp_inventory_prod",
       "url": "http://antwerp_inventory_prod:8090",
       "region": "antwerp",
       "env": "prod",
-      "active": false
+      "active": true
     },
     {
       "name": "india_inventory_prod",
@@ -65,14 +65,14 @@
       "url": "http://hk_inventory_prod:8100",
       "region": "hk",
       "env": "prod",
-      "active": false
+      "active": true
     },
     {
       "name": "ny_inventory_prod",
       "url": "http://ny_inventory_prod:8096",
       "region": "ny",
       "env": "prod",
-      "active": false
+      "active": true
     }
   ]
 }
