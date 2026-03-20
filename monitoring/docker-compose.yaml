@@ -16,6 +16,8 @@ services:
     restart: unless-stopped
     ports:
       - "9091:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./prometheus:/etc/prometheus:ro
       - prometheus_data:/prometheus
