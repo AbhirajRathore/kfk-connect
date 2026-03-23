@@ -35,7 +35,7 @@ services:
         max-size: "50m"
         max-file: "5"
 
-  # ── Alert routing (Email via Gmail SMTP) ──────────────────────
+  # ── Alert routing (Email + Slack) ──────────────────────────────
   alertmanager:
     image: prom/alertmanager:v0.27.0
     container_name: monitoring_alertmanager
@@ -45,14 +45,28 @@ services:
     environment:
       ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
       SMTP_PASS: ${SMTP_PASS}
+      SLACK_ALERTS_WEBHOOK: ${SLACK_ALERTS_WEBHOOK:-}
+      SLACK_ALERTS_CHANNEL: ${SLACK_ALERTS_CHANNEL:-#kafka-connect-alerts}
     volumes:
       - ./alertmanager:/etc/alertmanager:ro
       - alertmanager_data:/alertmanager
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        sed "s|SMTP_PASS_PLACEHOLDER|$$SMTP_PASS|g; s|ALERT_EMAIL_TO_PLACEHOLDER|$$ALERT_EMAIL_TO|g" \
-          /etc/alertmanager/alertmanager.yml.tmpl > /tmp/alertmanager.yml
+        if [ -n "$$SLACK_ALERTS_WEBHOOK" ]; then
+          echo "    slack_configs:" > /tmp/slack_block
+          echo "      - api_url: '$$SLACK_ALERTS_WEBHOOK'" >> /tmp/slack_block
+          echo "        channel: '$${SLACK_ALERTS_CHANNEL:-#kafka-connect-alerts}'" >> /tmp/slack_block
+          echo "        send_resolved: true" >> /tmp/slack_block
+        else
+          echo "    # Slack disabled (set SLACK_ALERTS_WEBHOOK to enable)" > /tmp/slack_block
+        fi
+        awk '
+          BEGIN { while ((getline line < "/tmp/slack_block") > 0) slack_block = slack_block line "\n"; close("/tmp/slack_block") }
+          /SLACK_ALERTS_BLOCK/ { printf "%s", slack_block; next }
+          { print }
+        ' /etc/alertmanager/alertmanager.yml.tmpl | \
+        sed "s|SMTP_PASS_PLACEHOLDER|$$SMTP_PASS|g; s|ALERT_EMAIL_TO_PLACEHOLDER|$$ALERT_EMAIL_TO|g" > /tmp/alertmanager.yml
         exec /bin/alertmanager \
           --config.file=/tmp/alertmanager.yml \
           --storage.path=/alertmanager \

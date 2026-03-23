@@ -8,7 +8,7 @@ Production-grade observability for all Kafka Connect inventory workers.
 |---|---|---|
 | Grafana | 3000 | Dashboards, log explorer |
 | Prometheus | 9091 | Metrics storage + alerting rules |
-| Alertmanager | 9093 | Email alert routing (Gmail SMTP) |
+| Alertmanager | 9093 | Email + Slack alert routing |
 | Loki | 3100 | Log aggregation (internal) |
 | Promtail | — | Docker log collector → Loki |
 | cAdvisor | 8081 | Container CPU / memory metrics |
@@ -16,7 +16,8 @@ Production-grade observability for all Kafka Connect inventory workers.
 
 ## Alert Channels
 
-- **Slack** → via [healthchecks.io](https://healthchecks.io) dead-man's-switch (same pattern as the existing Node.js monitoring script). The `connect-exporter` pings healthchecks.io every 30s when a worker is healthy. If pings stop, healthchecks.io fires the Slack alert.
+- **Slack (healthchecks.io)** → Dead-man's-switch only. The `connect-exporter` pings healthchecks.io every 30s when a worker is healthy. If pings stop, healthchecks.io fires a Slack alert.
+- **Slack (Prometheus alerts)** → Same alerts as email (connector failed, worker down, etc.) sent to a Slack channel. Set `SLACK_ALERTS_WEBHOOK` in `.env` to enable.
 - **Email** → Alertmanager sends directly via Gmail SMTP to `ALERT_EMAIL_TO`.
 
 ---
@@ -44,9 +45,23 @@ Fill in all values marked `FILL_IN_*`:
 |---|---|
 | `GRAFANA_ADMIN_PASSWORD` | A strong password for Grafana login |
 | `ALERT_EMAIL_TO` | Email address to receive all alerts |
+| `SLACK_ALERTS_WEBHOOK` | (Optional) Slack incoming webhook URL — same alerts as email (connector failed, worker down, etc.). Create in Slack: Apps → Incoming Webhooks. |
+| `SLACK_ALERTS_CHANNEL` | (Optional) Slack channel override. Default: `#kafka-connect-alerts`. Usually inferred from the webhook. |
 | `HC_PING_URL_*_DEV` | Ping URLs from healthchecks.io (see Step 3) |
 
-### Step 3 — Set up healthchecks.io checks (for Slack)
+### Step 3 — Set up Slack for Prometheus alerts (optional)
+
+To receive the same alerts as email (connector failed, worker down, task paused, etc.) in Slack:
+
+1. In Slack: **Apps** → **Incoming Webhooks** → **Add to Slack** → choose a channel (e.g. `#kafka-connect-alerts`)
+2. Copy the webhook URL (e.g. `https://hooks.slack.com/services/T00.../B00.../xxx`)
+3. Add to `monitoring/.env`:
+   ```bash
+   SLACK_ALERTS_WEBHOOK=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+   ```
+4. Redeploy the monitoring stack. Alerts will be sent to both email and Slack.
+
+### Step 4 — Set up healthchecks.io checks (for dead-man's-switch Slack)
 
 1. Go to [https://healthchecks.io](https://healthchecks.io) and log in to your existing account
 2. Create **5 new checks**, one per location:
@@ -61,7 +76,7 @@ Fill in all values marked `FILL_IN_*`:
 4. In your healthchecks.io project **Integrations**, connect your Slack workspace (if not already done)
 5. Copy the ping URL for each check into `monitoring/.env`
 
-### Step 4 — Deploy the monitoring stack via Portainer
+### Step 5 — Deploy the monitoring stack via Portainer
 
 In Portainer → **Stacks** → **Add stack**:
 - Name: `kfk-connect-monitoring`
@@ -75,7 +90,7 @@ cd monitoring/
 docker-compose up -d
 ```
 
-### Step 5 — Deploy worker stacks via Portainer
+### Step 6 — Deploy worker stacks via Portainer
 
 Each worker stack has been updated with:
 - `healthcheck` (polls `/connectors` endpoint)
@@ -94,7 +109,7 @@ Deploy each worker stack in Portainer. Set the `.env` variables from the worker'
 | `hk-inventory-dev` | `nivid-hk/inventory/dev/` |
 | `ny-inventory-dev` | `nivid-ny/inventory/dev/` |
 
-### Step 6 — Access Grafana
+### Step 7 — Access Grafana
 
 - URL: `http://<your-host>:3000`
 - User: `admin`

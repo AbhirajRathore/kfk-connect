@@ -1,0 +1,22 @@
+{{/* Kafka Connect — Slack alert templates (mirrors email alerts) */}}
+
+{{ define "slack.default.username" -}}
+Kafka Connect Monitor
+{{- end }}
+
+{{ define "slack.default.title" -}}
+{{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} {{ .GroupLabels.alertname }}{{ with .GroupLabels.region }} [{{ . }}{{ with $.GroupLabels.env }}/{{ . }}{{ end }}]{{ end }}
+{{- end }}
+
+{{ define "slack.default.text" -}}
+{{ range .Alerts }}
+*{{ .Annotations.summary }}*
+{{ .Annotations.description }}
+
+{{ with .Labels.worker }}_Worker:_ {{ . }}{{ end }}{{ with .Labels.connector }} · _Connector:_ {{ . }}{{ end }}{{ with .Labels.severity }} · _Severity:_ {{ . }}{{ end }}
+{{ end }}
+{{- end }}
+
+{{ define "slack.default.fallback" -}}
+[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}{{ range .Alerts }}: {{ .Annotations.summary }}{{ end }}
+{{- end }}

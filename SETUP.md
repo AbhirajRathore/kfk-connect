@@ -116,6 +116,10 @@ GRAFANA_ADMIN_PASSWORD=YourStrongPasswordHere
 # Email address that receives all alert emails
 ALERT_EMAIL_TO=your.name@example.com
 
+# (Optional) Slack webhook for Prometheus alerts — same as email (connector failed, worker down, etc.)
+# Create in Slack: Apps → Incoming Webhooks. Leave empty to disable.
+# SLACK_ALERTS_WEBHOOK=https://hooks.slack.com/services/T00/B00/xxx
+
 # Paste ping URLs from healthchecks.io (Step 1.3)
 HC_PING_URL_DUBAI_DEV=https://hc-ping.com/YOUR-UUID-DUBAI
 HC_PING_URL_ANTWERP_DEV=https://hc-ping.com/YOUR-UUID-ANTWERP
