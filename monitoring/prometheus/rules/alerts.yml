@@ -82,18 +82,29 @@ groups:
 
       - alert: InventoryContainerHighMemory
         expr: |
-          (
-            container_memory_working_set_bytes{name=~".+inventory.+"}
-            / container_spec_memory_limit_bytes{name=~".+inventory.+"}
-          ) > 0.85
+          container_memory_working_set_bytes{name=~".+inventory.+"} > 20e9
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Container memory above 85% [{{ $labels.name }}]"
+          summary: "Container memory above 20 GiB [{{ $labels.name }}]"
           description: |
-            Container '{{ $labels.name }}' is using more than 85% of its memory limit.
-            Consider increasing the memory limit in docker-compose.yaml.
+            Container '{{ $labels.name }}' is using {{ $value | humanize1024 }}B of memory.
+            Historical peak is ~13.2 GiB — sustained usage above 20 GiB may indicate a memory leak.
+            Check: docker logs {{ $labels.name }}
+
+      - alert: HostMemoryPressure
+        expr: |
+          (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Host memory above 85% ({{ $value | humanizePercentage }})"
+          description: |
+            The host is using {{ $value | humanizePercentage }} of total RAM.
+            This catches combined memory pressure across all containers.
+            Check top consumers: docker stats --no-stream
 
       - alert: InventoryContainerRestarting
         expr: |
