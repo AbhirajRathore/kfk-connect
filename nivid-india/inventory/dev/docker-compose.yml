@@ -11,6 +11,8 @@ services:
     restart: always
     hostname: connect-8097
     container_name: india_inventory_19c
+    mem_limit: 24g
+    memswap_limit: 24g
     ports:
       - "8097:8097"
     # volumes:

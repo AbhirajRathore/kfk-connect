@@ -11,6 +11,8 @@ services:
     restart: always
     hostname: connect-8084
     container_name: dubai_inventory_dev
+    mem_limit: 24g
+    memswap_limit: 24g
     ports:
       - "8084:8084"
     # volumes:

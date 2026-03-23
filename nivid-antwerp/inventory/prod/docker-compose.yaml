@@ -11,6 +11,8 @@ services:
     restart: always
     hostname: connect-8090
     container_name: antwerp_inventory_prod
+    mem_limit: 24g
+    memswap_limit: 24g
     ports:
       - "8090:8090"
     # volumes:

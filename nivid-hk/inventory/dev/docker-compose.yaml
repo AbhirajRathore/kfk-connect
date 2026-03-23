@@ -11,6 +11,8 @@ services:
     restart: always
     hostname: connect-8099
     container_name: hk_inventory_dev
+    mem_limit: 24g
+    memswap_limit: 24g
     ports:
       - "8099:8099"
     # volumes:

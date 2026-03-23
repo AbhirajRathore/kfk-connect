@@ -11,6 +11,8 @@ services:
     restart: always
     hostname: connect-8095
     container_name: ny_inventory_dev
+    mem_limit: 24g
+    memswap_limit: 24g
     ports:
       - "8095:8095"
     # volumes:
