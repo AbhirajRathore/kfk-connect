@@ -32,6 +32,10 @@ CONNECT_TIMEOUT = int(os.environ.get("CONNECT_TIMEOUT_SECONDS", "10"))
 HC_PING_TIMEOUT = int(os.environ.get("HC_PING_TIMEOUT_SECONDS", "5"))
 WORKERS_FILE = os.environ.get("WORKERS_FILE", "/app/workers.json")
 
+# Server-level deadman-switch: pinged every poll cycle so healthchecks.io
+# can fire a Slack alert if this server loses power or network connectivity.
+HC_PING_URL_SERVER = os.environ.get("HC_PING_URL_SERVER", "")
+
 # ── Prometheus metrics ────────────────────────────────────────────────────────
 WORKER_UP = Gauge(
     "kafka_connect_worker_up",
@@ -209,6 +213,13 @@ def main() -> None:
                     "Unexpected error polling worker '%s': %s",
                     worker.get("name", "unknown"), exc,
                 )
+
+        # Server-level deadman switch — unconditional ping so healthchecks.io
+        # detects a server outage (power/network) even if no workers are configured.
+        if HC_PING_URL_SERVER:
+            ping_healthcheck(HC_PING_URL_SERVER)
+            logger.debug("Server heartbeat pinged: %s", HC_PING_URL_SERVER)
+
         time.sleep(POLL_INTERVAL)
 
 

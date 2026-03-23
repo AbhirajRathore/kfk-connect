@@ -207,6 +207,8 @@ services:
       POLL_INTERVAL_SECONDS: "30"
       CONNECT_TIMEOUT_SECONDS: "10"
       HC_PING_TIMEOUT_SECONDS: "5"
+      # Server-level deadman switch (fires Slack alert if this host goes down)
+      HC_PING_URL_SERVER: ${HC_PING_URL_SERVER:-}
       # Phase 1 — dev inventory workers (fill in from healthchecks.io)
       HC_PING_URL_DUBAI_DEV: ${HC_PING_URL_DUBAI_DEV}
       HC_PING_URL_ANTWERP_DEV: ${HC_PING_URL_ANTWERP_DEV}
