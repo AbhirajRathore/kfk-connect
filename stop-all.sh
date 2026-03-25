@@ -40,7 +40,7 @@ WORKER_DIRS=(
   "nivid-ny/inventory/prod"
   # Uncomment when India is deployed:
   # "nivid-india/inventory/dev"
-  # "nivid-india/inventory/prod"
+  "nivid-india/inventory/prod"
 )
 
 if [[ "$STOP_WORKERS" == true ]]; then

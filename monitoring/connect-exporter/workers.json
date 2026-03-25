@@ -58,7 +58,7 @@
       "url": "http://india_inventory_prod:8083",
       "region": "india",
       "env": "prod",
-      "active": false
+      "active": true
     },
     {
       "name": "hk_inventory_prod",

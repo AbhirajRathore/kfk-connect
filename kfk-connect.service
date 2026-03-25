@@ -25,7 +25,7 @@ ExecStart=/bin/bash -c 'cd /root/kfk-connect/nivid-hk/inventory/prod     && dock
 ExecStart=/bin/bash -c 'cd /root/kfk-connect/nivid-ny/inventory/dev      && docker compose --env-file .env up -d'
 ExecStart=/bin/bash -c 'cd /root/kfk-connect/nivid-ny/inventory/prod     && docker compose --env-file .env up -d'
 # ExecStart=/bin/bash -c 'cd /root/kfk-connect/nivid-india/inventory/dev   && docker compose --env-file .env up -d'
-# ExecStart=/bin/bash -c 'cd /root/kfk-connect/nivid-india/inventory/prod  && docker compose --env-file .env up -d'
+ExecStart=/bin/bash -c 'cd /root/kfk-connect/nivid-india/inventory/prod  && docker compose --env-file .env up -d'
 
 # Stop in reverse order
 ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-ny/inventory/prod      && docker compose --env-file .env down'
@@ -36,7 +36,7 @@ ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-antwerp/inventory/prod && dock
 ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-antwerp/inventory/dev  && docker compose --env-file .env down'
 ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-dubai/inventory/prod   && docker compose --env-file .env down'
 ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-dubai/inventory/dev    && docker compose --env-file .env down'
-# ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-india/inventory/prod  && docker compose --env-file .env down'
+ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-india/inventory/prod  && docker compose --env-file .env down'
 # ExecStop=/bin/bash -c 'cd /root/kfk-connect/nivid-india/inventory/dev   && docker compose --env-file .env down'
 ExecStop=/bin/bash -c 'cd /root/kfk-connect/monitoring && docker compose down'
 

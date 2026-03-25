@@ -218,7 +218,7 @@ services:
       # Phase 2 — prod inventory workers (uncomment when deploying prod)
       # HC_PING_URL_DUBAI_PROD: ${HC_PING_URL_DUBAI_PROD}
       # HC_PING_URL_ANTWERP_PROD: ${HC_PING_URL_ANTWERP_PROD}
-      # HC_PING_URL_INDIA_PROD: ${HC_PING_URL_INDIA_PROD}
+      HC_PING_URL_INDIA_PROD: ${HC_PING_URL_INDIA_PROD}
       # HC_PING_URL_HK_PROD: ${HC_PING_URL_HK_PROD}
       # HC_PING_URL_NY_PROD: ${HC_PING_URL_NY_PROD}
     networks:

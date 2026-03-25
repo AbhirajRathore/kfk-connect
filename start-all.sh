@@ -38,9 +38,9 @@ WORKERS=(
   "nivid-hk/inventory/prod|8100|hk_inventory|hk_inventory_live.json|hk_inventory_prod"
   "nivid-ny/inventory/dev|8095|ny_inventory|ny_inventory_dev.json|ny_inventory_dev"
   "nivid-ny/inventory/prod|8096|ny_inventory|ny_inventory_live.json|ny_inventory_prod"
-  # Uncomment when India is deployed:
+  # Uncomment when India dev is deployed:
   # "nivid-india/inventory/dev|8097|india_inventory_19c|india_inventory_19c.json|india_inventory_19c"
-  # "nivid-india/inventory/prod|8083|india_inventory|india_inventory_live.json|india_inventory_prod"
+  "nivid-india/inventory/prod|8083|india_inventory|india_inventory_live.json|india_inventory_prod"
 )
 
 # ── Step 1: Docker network ───────────────────────────────────────────────────
