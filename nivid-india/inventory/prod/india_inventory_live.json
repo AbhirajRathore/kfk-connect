@@ -13,7 +13,7 @@
     "connection.oracle.jdbc.ReadTimeout": "2000000",
     "connection.user": "KGKERP",
     "connection.password": "n3tc0r3kgk3rp19c",
-    "connection.attempts": "3",
+    "connection.attempts": "-1",
     "connection.backoff.ms": "10000",
     "connection.pool.max.size": "20",
     "table.whitelist": "",
@@ -40,6 +40,6 @@
     "errors.tolerance": "all",
     "errors.log.enable": true,
     "errors.log.include.messages": true,
-    "max.retries": 3,
+    "max.retries": 10,
     "retry.backoff.ms": 10000
 }

@@ -4,6 +4,7 @@ Kafka Connect Exporter
 - Exposes Prometheus metrics on :8000/metrics
 - Pings healthchecks.io when healthy (dead-man's-switch for Slack alerts)
 - Pings healthchecks.io /fail endpoint when a task fails or worker is unreachable
+- Auto-restarts FAILED tasks so syncing resumes when a DB tunnel comes back up
 """
 
 import json
@@ -31,6 +32,20 @@ POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL_SECONDS", "30"))
 CONNECT_TIMEOUT = int(os.environ.get("CONNECT_TIMEOUT_SECONDS", "10"))
 HC_PING_TIMEOUT = int(os.environ.get("HC_PING_TIMEOUT_SECONDS", "5"))
 WORKERS_FILE = os.environ.get("WORKERS_FILE", "/app/workers.json")
+
+# Auto-restart failed tasks — keeps syncing going after tunnel/power outages
+# without manual container restarts.
+AUTO_RESTART_FAILED_TASKS: bool = os.environ.get(
+    "AUTO_RESTART_FAILED_TASKS", "true"
+).lower() in ("1", "true", "yes")
+# Minimum gap between successive restarts of the same task to avoid a restart
+# storm when the DB/tunnel is persistently down.
+AUTO_RESTART_COOLDOWN_SECONDS: int = int(
+    os.environ.get("AUTO_RESTART_COOLDOWN_SECONDS", "300")
+)
+
+# In-memory cooldown tracker: key = "worker/connector/task_id" → last restart epoch
+_restart_cooldowns: dict[str, float] = {}
 
 # Server-level deadman-switch: pinged every poll cycle so healthchecks.io
 # can fire a Slack alert if this server loses power or network connectivity.
@@ -67,6 +82,11 @@ SCRAPE_ERRORS = Counter(
     "Total number of scrape errors per worker",
     ["worker"],
 )
+TASK_RESTARTS = Counter(
+    "kafka_connect_task_restarts_total",
+    "Total number of automatic task restarts triggered by the exporter",
+    ["worker", "region", "env", "connector", "task_id"],
+)
 LAST_SCRAPE = Gauge(
     "kafka_connect_last_scrape_timestamp_seconds",
     "Unix timestamp of the last successful scrape",
@@ -88,6 +108,55 @@ def ping_healthcheck(url: str, fail: bool = False) -> None:
         logger.debug("Pinged healthcheck: %s (fail=%s)", target, fail)
     except Exception as exc:
         logger.warning("healthcheck ping failed for %s: %s", target, exc)
+
+
+# ── Auto-restart helpers ──────────────────────────────────────────────────────
+def _maybe_restart_task(
+    base_url: str,
+    worker_name: str,
+    region: str,
+    env: str,
+    connector: str,
+    task_id: str,
+    labels: dict[str, str],
+) -> None:
+    """Issue a task restart if the per-task cooldown has elapsed."""
+    cooldown_key = f"{worker_name}/{connector}/{task_id}"
+    last_restart = _restart_cooldowns.get(cooldown_key, 0.0)
+    elapsed = time.time() - last_restart
+
+    if elapsed < AUTO_RESTART_COOLDOWN_SECONDS:
+        remaining = AUTO_RESTART_COOLDOWN_SECONDS - elapsed
+        logger.info(
+            "[%s] connector=%s task=%s FAILED — cooldown active, %.0fs until next restart attempt",
+            worker_name, connector, task_id, remaining,
+        )
+        return
+
+    try:
+        resp = requests.post(
+            f"{base_url}/connectors/{connector}/tasks/{task_id}/restart",
+            timeout=CONNECT_TIMEOUT,
+        )
+        if resp.status_code in (200, 204):
+            logger.info(
+                "[%s] Auto-restarted FAILED task: connector=%s task=%s",
+                worker_name, connector, task_id,
+            )
+            _restart_cooldowns[cooldown_key] = time.time()
+            TASK_RESTARTS.labels(
+                **labels, connector=connector, task_id=task_id
+            ).inc()
+        else:
+            logger.warning(
+                "[%s] Restart attempt returned HTTP %s for connector=%s task=%s — will retry after cooldown",
+                worker_name, resp.status_code, connector, task_id,
+            )
+    except Exception as exc:
+        logger.error(
+            "[%s] Failed to restart task connector=%s task=%s: %s",
+            worker_name, connector, task_id, exc,
+        )
 
 
 # ── Worker polling ────────────────────────────────────────────────────────────
@@ -172,6 +241,13 @@ def poll_worker(worker: dict[str, Any]) -> None:
                     logger.warning(
                         "[%s] connector=%s task=%s state=%s",
                         name, connector, task_id, task_state,
+                    )
+
+                # Auto-restart FAILED tasks so syncing resumes when a DB
+                # tunnel or power outage clears without manual intervention.
+                if task_state == "FAILED" and AUTO_RESTART_FAILED_TASKS:
+                    _maybe_restart_task(
+                        base_url, name, region, env, connector, task_id, labels
                     )
 
         TASK_FAILED.labels(**labels, connector=connector).set(
