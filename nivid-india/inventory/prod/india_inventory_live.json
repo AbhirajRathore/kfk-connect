@@ -13,7 +13,7 @@
     "connection.oracle.jdbc.ReadTimeout": "2000000",
     "connection.user": "KGKERP",
     "connection.password": "n3tc0r3kgk3rp19c",
-    "connection.attempts": "-1",
+    "connection.attempts": "20",
     "connection.backoff.ms": "10000",
     "connection.pool.max.size": "20",
     "table.whitelist": "",
